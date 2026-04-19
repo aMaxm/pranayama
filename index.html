@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pranayama Timer</title>
+    <title>Pranayama Circle</title>
     <style>
         :root {
             --bg: #f0f4f3;
@@ -62,7 +62,6 @@
         .input-group { display: flex; flex-direction: column; gap: 2px; }
         .input-group span { font-size: 9px; text-transform: uppercase; color: var(--light); font-weight: 700; }
 
-        /* Переключатели */
         .switch { position: relative; width: 36px; height: 20px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
@@ -103,9 +102,9 @@
             border-radius: 50%;
             will-change: transform;
             z-index: 1;
+            transition: border-color 0.3s;
         }
 
-        /* Текст внутри круга */
         .circle-content {
             position: relative;
             z-index: 5;
@@ -114,45 +113,26 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 160px;
+            width: 180px;
             pointer-events: none;
         }
 
         #phase-title {
             color: var(--accent);
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 5px;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
         }
 
         #counter {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--light);
             font-weight: 600;
-            margin-bottom: 15px;
         }
 
-        #mode-btn {
-            border: none;
-            background: rgba(99, 154, 136, 0.1);
-            color: var(--accent);
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 10px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            pointer-events: auto;
-        }
-
-        .bar-wrap {
-            width: 40px; height: 180px; background: #eee; border-radius: 20px;
-            overflow: hidden; position: relative; display: none;
-        }
-        .bar-fill { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; }
-
-        /* Кнопки внизу */
+        /* Кнопки */
         .footer-block { flex-shrink: 0; padding-top: 15px; }
         .main-btn {
             width: 100%; padding: 18px; border: none; border-radius: 16px;
@@ -192,22 +172,19 @@
             <input type="number" id="total" value="0" style="width: 70px;">
         </div>
         <div class="row">
-            <span class="label">Звук гонга</span>
+            <span class="label">Звук (333 Гц)</span>
             <label class="switch"><input type="checkbox" id="snd-sw" checked><span class="slider"></span></label>
         </div>
     </div>
 
     <div class="viz-section">
-        <div id="circle-container" class="circle-wrap">
+        <div class="circle-wrap">
             <div id="circle" class="circle"></div>
             <div class="circle-content">
                 <div id="phase-title">ГОТОВ</div>
                 <div id="counter">Цикл 0 из 0</div>
-                <button id="mode-btn">ВИД: КРУГ</button>
             </div>
         </div>
-
-        <div id="bar" class="bar-wrap"><div id="bar-fill" class="bar-fill"></div></div>
     </div>
 
     <div class="footer-block">
@@ -219,7 +196,7 @@
 <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function playDeepGong() {
+    function play333Hz() {
         if (!document.getElementById('snd-sw').checked) return;
         
         const now = audioCtx.currentTime;
@@ -227,22 +204,20 @@
         const gain = audioCtx.createGain();
         
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(110, now); // Низкий, медитативный тон (A2)
+        osc.frequency.setValueAtTime(333, now); // Та самая частота
         
         gain.gain.setValueAtTime(0, now);
-        // Мягкое нарастание без щелчка
-        gain.gain.linearRampToValueAtTime(0.3, now + 0.08); 
-        // Длинное затухание для эффекта глубины
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+        gain.gain.linearRampToValueAtTime(0.25, now + 0.1); 
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
         
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         
         osc.start(now);
-        osc.stop(now + 2.0);
+        osc.stop(now + 1.6);
     }
 
-    let state = { active: false, phases: [], pIdx: 0, cycle: 1, start: 0, raf: null, isCircle: true };
+    let state = { active: false, phases: [], pIdx: 0, cycle: 1, start: 0, raf: null };
 
     const dom = {
         in: document.getElementById('in'), h1: document.getElementById('h1'),
@@ -250,18 +225,16 @@
         total: document.getElementById('total'), preset: document.getElementById('preset'),
         hold: document.getElementById('hold-sw'), start: document.getElementById('start-btn'),
         stop: document.getElementById('stop-btn'), title: document.getElementById('phase-title'),
-        circle: document.getElementById('circle'), barF: document.getElementById('bar-fill'),
-        count: document.getElementById('counter'), mode: document.getElementById('mode-btn'),
-        circleCont: document.getElementById('circle-container'), barCont: document.getElementById('bar')
+        circle: document.getElementById('circle'), count: document.getElementById('counter')
     };
 
     function getPhases() {
         const h = dom.hold.checked;
         return [
-            { n: 'Вдох', t: parseInt(dom.in.value), s: [1, 1.5], b: [0, 100] },
-            { n: 'Пауза', t: h ? parseInt(dom.h1.value) : 0, s: [1.5, 1.5], b: [100, 100] },
-            { n: 'Выдох', t: parseInt(dom.out.value), s: [1.5, 1], b: [100, 0] },
-            { n: 'Пауза', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1], b: [0, 0] }
+            { n: 'Вдох', t: parseInt(dom.in.value), s: [1, 1.5] },
+            { n: 'Пауза', t: h ? parseInt(dom.h1.value) : 0, s: [1.5, 1.5] },
+            { n: 'Выдох', t: parseInt(dom.out.value), s: [1.5, 1] },
+            { n: 'Пауза', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1] }
         ].filter(p => p.t > 0);
     }
 
@@ -284,14 +257,9 @@
 
         const pct = Math.min((Date.now() - state.start) / (state.phases[state.pIdx].t * 1000), 1);
         const cur = state.phases[state.pIdx];
-
-        if (state.isCircle) {
-            const s = cur.s[0] + (cur.s[1] - cur.s[0]) * pct;
-            dom.circle.style.transform = `scale(${s})`;
-        } else {
-            const h = cur.b[0] + (cur.b[1] - cur.b[0]) * pct;
-            dom.barF.style.height = `${h}%`;
-        }
+        const s = cur.s[0] + (cur.s[1] - cur.s[0]) * pct;
+        dom.circle.style.transform = `scale(${s})`;
+        
         state.raf = requestAnimationFrame(loop);
     }
 
@@ -299,7 +267,7 @@
         dom.title.innerText = state.phases[state.pIdx].n;
         const total = parseInt(dom.total.value);
         dom.count.innerText = `Цикл ${state.cycle} из ${total === 0 ? '∞' : total}`;
-        playDeepGong();
+        play333Hz();
     }
 
     function stop() {
@@ -307,7 +275,6 @@
         dom.start.style.display = 'block'; dom.stop.style.display = 'none';
         dom.title.innerText = 'ГОТОВ'; 
         dom.circle.style.transform = 'scale(1)'; 
-        dom.barF.style.height = '0%';
     }
 
     dom.start.onclick = () => {
@@ -328,19 +295,6 @@
         else if (v === '4-7-8') { dom.in.value=4; dom.h1.value=7; dom.out.value=8; dom.h2.value=0; dom.hold.checked=true; }
         else if (v === '4-0-2') { dom.in.value=4; dom.h1.value=0; dom.out.value=2; dom.h2.value=0; dom.hold.checked=false; }
         dom.hold.onchange();
-    };
-    
-    dom.mode.onclick = () => {
-        state.isCircle = !state.isCircle;
-        if (state.isCircle) {
-            dom.circle.style.display = 'block';
-            dom.barCont.style.display = 'none';
-            dom.mode.innerText = 'ВИД: КРУГ';
-        } else {
-            dom.circle.style.display = 'none';
-            dom.barCont.style.display = 'block';
-            dom.mode.innerText = 'ВИД: СТОЛБЕЦ';
-        }
     };
     [dom.in, dom.h1, dom.out, dom.h2].forEach(i => i.oninput = () => dom.preset.value = 'custom');
 </script>
