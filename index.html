@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pranayama Timer PRO</title>
+    <title>Pranayama Timer</title>
     <style>
         :root {
             --bg: #f0f4f3;
@@ -11,7 +11,6 @@
             --accent: #639a88;
             --text: #2c3e50;
             --light: #94a3a8;
-            --border: #e1e8e7;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -25,10 +24,11 @@
             align-items: center;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            padding: env(safe-area-inset-top) env(safe-area-inset-bottom);
         }
 
-        .app-wrapper {
+        /* Контейнер-карточка */
+        .app-container {
             background: var(--card);
             width: 100%;
             max-width: 400px;
@@ -36,130 +36,135 @@
             max-height: 850px;
             display: flex;
             flex-direction: column;
-            padding: 25px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             position: relative;
         }
 
         @media (min-width: 500px) and (min-height: 600px) {
-            .app-wrapper {
+            .app-container {
                 height: 90vh;
-                border-radius: 30px;
+                border-radius: 25px;
             }
         }
 
-        /* Настройки */
-        .header-settings { flex-shrink: 0; display: grid; gap: 12px; }
-        .row { display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
-        .label { font-size: 15px; font-weight: 600; }
+        /* Верхняя часть: Настройки */
+        .settings-block { flex-shrink: 0; display: grid; gap: 10px; }
+        .row { display: flex; justify-content: space-between; align-items: center; min-height: 35px; }
+        .label { font-size: 14px; font-weight: 600; }
         
         select, input[type="number"] {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
+            padding: 8px;
+            border: 1px solid #e1e8e7;
+            border-radius: 8px;
             background: #f9fbfb;
             font-size: 14px;
-            width: 150px;
+            width: 140px;
             color: var(--text);
         }
 
-        .phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-        .field-box { display: flex; flex-direction: column; gap: 4px; }
-        .field-box span { font-size: 10px; text-transform: uppercase; color: var(--light); font-weight: 800; letter-spacing: 0.5px; }
-        .field-box input { width: 100%; }
+        .phase-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .input-group { display: flex; flex-direction: column; gap: 2px; }
+        .input-group span { font-size: 10px; text-transform: uppercase; color: var(--light); font-weight: 700; }
+        .input-group input { width: 100%; }
 
-        /* Переключатель */
-        .switch { position: relative; width: 44px; height: 24px; }
+        /* Тумблеры */
+        .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background: #d1d9d8; transition: .3s; border-radius: 24px;
+            background: #d1d9d8; transition: .3s; border-radius: 22px;
         }
         .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
             background: white; transition: .3s; border-radius: 50%;
         }
         input:checked + .slider { background: var(--accent); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
-        /* Визуализатор (Центральная часть) */
-        .main-visual {
-            flex: 1;
+        /* Центральная часть: Визуализатор */
+        .viz-section {
+            flex: 1; /* Занимает всё свободное место */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 0; /* Важно для flex-сжатия */
+            min-height: 0; /* Чтобы flex-item мог сжиматься */
         }
 
-        #phase-display {
+        #phase-title {
             color: var(--accent);
             font-size: 24px;
             font-weight: 800;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 2px;
-            height: 30px;
         }
 
-        /* КРУГ - Строго круглый */
-        .viz-circle {
-            width: 130px;
-            height: 130px;
-            aspect-ratio: 1 / 1;
+        .circle-wrap {
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .circle {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1 / 1; /* ЖЕСТКИЙ КРУГ */
             border: 5px solid var(--accent);
             border-radius: 50%;
             will-change: transform;
-            display: block;
         }
 
-        .viz-bar-wrap {
-            width: 45px;
+        .bar-wrap {
+            width: 40px;
             height: 180px;
-            background: #f0f4f3;
-            border-radius: 25px;
+            background: #eee;
+            border-radius: 20px;
             overflow: hidden;
             position: relative;
             display: none;
-            border: 1px solid var(--border);
         }
-        .viz-bar-fill { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; will-change: height; }
+        .bar-fill { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; }
 
-        #mode-toggle-btn {
-            margin-top: 25px; border: none; background: none; color: var(--light);
-            font-weight: 700; cursor: pointer; font-size: 12px; letter-spacing: 1px;
+        #mode-btn {
+            margin-top: 20px; border: none; background: none; color: var(--light);
+            font-weight: 700; cursor: pointer; font-size: 12px;
         }
 
-        /* Управление (Низ) */
-        .footer-controls { flex-shrink: 0; padding-top: 15px; text-align: center; }
-        .cycle-status { font-size: 16px; color: var(--light); margin-bottom: 20px; font-weight: 600; }
+        /* Нижняя часть: Кнопки */
+        .footer-block { flex-shrink: 0; padding-top: 10px; text-align: center; }
+        .cycle-info { font-size: 15px; color: var(--light); margin-bottom: 12px; font-weight: 600; }
         
-        .action-btn {
+        .main-btn {
             width: 100%;
-            padding: 20px;
+            padding: 18px;
             border: none;
-            border-radius: 18px;
+            border-radius: 16px;
             font-size: 18px;
             font-weight: 800;
             cursor: pointer;
             color: white;
-            transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: 0.2s;
         }
-        .start-style { background: var(--accent); box-shadow: 0 4px 15px rgba(99, 154, 136, 0.3); }
-        .stop-style { background: #e74c3c; display: none; }
-        .action-btn:active { transform: scale(0.96); }
+        .btn-start { background: var(--accent); }
+        .btn-stop { background: #e74c3c; display: none; }
+        .main-btn:active { transform: scale(0.97); }
 
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="app-wrapper">
-    <div class="header-settings">
+<div class="app-container">
+    <div class="settings-block">
         <div class="row">
-            <span class="label">Пресет</span>
-            <select id="preset-select">
-                <option value="custom">Свои значения</option>
+            <span class="label">Пакет</span>
+            <select id="preset">
+                <option value="custom">Свой</option>
                 <option value="4-4-4-4">Квадрат (4-4-4-4)</option>
                 <option value="4-7-8">Сон (4-7-8)</option>
                 <option value="4-0-2">Бодрость (4-0-2)</option>
@@ -168,147 +173,149 @@
         <div class="row">
             <span class="label">Задержки</span>
             <label class="switch">
-                <input type="checkbox" id="hold-toggle-sw" checked>
+                <input type="checkbox" id="hold-sw" checked>
                 <span class="slider"></span>
             </label>
         </div>
-        <div class="phase-grid">
-            <div class="field-box"><span>Вдох</span><input type="number" id="in-val" value="4"></div>
-            <div class="field-box hold-input-group"><span>Задержка</span><input type="number" id="h1-val" value="4"></div>
-            <div class="field-box"><span>Выдох</span><input type="number" id="out-val" value="4"></div>
-            <div class="field-box hold-input-group"><span>Задержка</span><input type="number" id="h2-val" value="4"></div>
+        <div class="phase-inputs">
+            <div class="input-group"><span>Вдох</span><input type="number" id="in" value="4"></div>
+            <div class="input-group hold-f"><span>Задержка</span><input type="number" id="h1" value="4"></div>
+            <div class="input-group"><span>Выдох</span><input type="number" id="out" value="4"></div>
+            <div class="input-group hold-f"><span>Задержка</span><input type="number" id="h2" value="4"></div>
         </div>
         <div class="row">
-            <span class="label">Кол-во циклов</span>
-            <input type="number" id="cycles-limit" value="0" style="width: 70px;">
+            <span class="label">Циклы</span>
+            <input type="number" id="total" value="0" style="width: 70px;">
         </div>
         <div class="row">
             <span class="label">Звук (Чаша)</span>
             <label class="switch">
-                <input type="checkbox" id="sound-sw" checked>
+                <input type="checkbox" id="snd-sw" checked>
                 <span class="slider"></span>
             </label>
         </div>
     </div>
 
-    <div class="main-visual">
-        <div id="phase-display">ГОТОВ</div>
-        <div id="circle-element" class="viz-circle"></div>
-        <div id="bar-element" class="viz-bar-wrap"><div id="bar-fill-element" class="viz-bar-fill"></div></div>
-        <button id="mode-toggle-btn">РЕЖИМ: КРУГ</button>
+    <div class="viz-section">
+        <div id="phase-title">ГОТОВ</div>
+        <div class="circle-wrap">
+            <div id="circle" class="circle"></div>
+        </div>
+        <div id="bar" class="bar-wrap"><div id="bar-fill" class="bar-fill"></div></div>
+        <button id="mode-btn">ВИД: КРУГ</button>
     </div>
 
-    <div class="footer-controls">
-        <div id="cycle-info" class="cycle-status">Цикл 0 из 0</div>
-        <button id="start-btn" class="action-btn start-style">СТАРТ</button>
-        <button id="stop-btn" class="action-btn stop-style">СТОП</button>
+    <div class="footer-block">
+        <div id="counter" class="cycle-info">Цикл 0 из 0</div>
+        <button id="start-btn" class="main-btn btn-start">СТАРТ</button>
+        <button id="stop-btn" class="main-btn btn-stop">СТОП</button>
     </div>
 </div>
 
 <script>
-    // Мягкий звук поющей чаши (Base64)
-    const bellSound = new Audio("data:audio/wav;base64,UklGRmYBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT4BAACAgICAgICAgICAWlpaWlpGRkZGRkZGRjpqWlpGRmtpaWlaampraGtGRmpra2tra3NGRmNraytzWnNaWlo8SjVaPDw8PEpqampqckZqc2tra3NaSjw5OTk8SkZqc2tzSkZKSkZKSmtKSmtra2uDc3Nra4uLc3Nzc4tra4uDa2trc3N7g4ODWnNra3tzampqckZqckY8Ojp7Ojp6amp6ckp6Wkpqc2tqa3Nzc3N7ckpKSkpqckpqa4trckpKSkpra3Nzc4trWlpySkZqSjw8PEp6Sjo6Ojo6Sjp7Sjo5OTo8Sjw5PEpqc2tqWnp7c3tzcmp6ckpqa2tra3Nqa3NaSnpqckp6Sjo8ckZKSjo5OTlKSjo6ckY5Snpqa3NzSkY8SkZKSjo5OQAAAAA=");
+    // Та самая поющая чаша
+    const bowlSound = new Audio("data:audio/wav;base64,UklGRmYBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT4BAACAgICAgICAgICAWlpaWlpGRkZGRkZGRjpqWlpGRmtpaWlaampraGtGRmpra2tra3NGRmNraytzWnNaWlo8SjVaPDw8PEpqampqckZqc2tra3NaSjw5OTk8SkZqc2tzSkZKSkZKSmtKSmtra2uDc3Nra4uLc3Nzc4tra4uDa2trc3N7g4ODWnNra3tzampqckZqckY8Ojp7Ojp6amp6ckp6Wkpqc2tqa3Nzc3N7ckpKSkpqckpqa4trckpKSkpra3Nzc4trWlpySkZqSjw8PEp6Sjo6Ojo6Sjp7Sjo5OTo8Sjw5PEpqc2tqWnp7c3tzcmp6ckpqa2tra3Nqa3NaSnpqckp6Sjo8ckZKSjo5OTlKSjo6ckY5Snpqa3NzSkY8SkZKSjo5OQAAAAA=");
 
-    function playSound() {
-        if (!document.getElementById('sound-sw').checked) return;
-        bellSound.currentTime = 0;
-        bellSound.play().catch(() => {});
+    function play() {
+        if (document.getElementById('snd-sw').checked) {
+            bowlSound.currentTime = 0;
+            bowlSound.play().catch(() => {});
+        }
     }
 
-    let appState = { running: false, phases: [], currentIdx: 0, cycle: 1, startTime: 0, raf: null, modeCircle: true };
+    let state = { active: false, phases: [], pIdx: 0, cycle: 1, start: 0, raf: null, isCircle: true };
 
-    const ui = {
-        in: document.getElementById('in-val'), h1: document.getElementById('h1-val'),
-        out: document.getElementById('out-val'), h2: document.getElementById('h2-val'),
-        limit: document.getElementById('cycles-limit'), preset: document.getElementById('preset-select'),
-        hold: document.getElementById('hold-toggle-sw'), start: document.getElementById('start-btn'),
-        stop: document.getElementById('stop-btn'), title: document.getElementById('phase-display'),
-        circle: document.getElementById('circle-element'), barFill: document.getElementById('bar-fill-element'),
-        counter: document.getElementById('cycle-info'), modeBtn: document.getElementById('mode-toggle-btn')
+    const dom = {
+        in: document.getElementById('in'), h1: document.getElementById('h1'),
+        out: document.getElementById('out'), h2: document.getElementById('h2'),
+        total: document.getElementById('total'), preset: document.getElementById('preset'),
+        hold: document.getElementById('hold-sw'), start: document.getElementById('start-btn'),
+        stop: document.getElementById('stop-btn'), title: document.getElementById('phase-title'),
+        circle: document.getElementById('circle'), barF: document.getElementById('bar-fill'),
+        count: document.getElementById('counter'), mode: document.getElementById('mode-btn')
     };
 
-    function generatePhases() {
-        const h = ui.hold.checked;
+    function getPhases() {
+        const h = dom.hold.checked;
         return [
-            { n: 'Вдох', t: parseInt(ui.in.value), s: [1, 1.6], b: [0, 100] },
-            { n: 'Задержка', t: h ? parseInt(ui.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
-            { n: 'Выдох', t: parseInt(ui.out.value), s: [1.6, 1], b: [100, 0] },
-            { n: 'Задержка', t: h ? parseInt(ui.h2.value) : 0, s: [1, 1], b: [0, 0] }
+            { n: 'Вдох', t: parseInt(dom.in.value), s: [1, 1.6], b: [0, 100] },
+            { n: 'Задержка', t: h ? parseInt(dom.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
+            { n: 'Выдох', t: parseInt(dom.out.value), s: [1.6, 1], b: [100, 0] },
+            { n: 'Задержка', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1], b: [0, 0] }
         ].filter(p => p.t > 0);
     }
 
-    function animate() {
-        if (!appState.running) return;
+    function loop() {
+        if (!state.active) return;
         const now = Date.now();
-        const elapsed = (now - appState.startTime) / 1000;
-        const p = appState.phases[appState.currentIdx];
+        const elapsed = (now - state.start) / 1000;
+        const p = state.phases[state.pIdx];
 
         if (elapsed >= p.t) {
-            appState.currentIdx++;
-            if (appState.currentIdx >= appState.phases.length) {
-                appState.currentIdx = 0; appState.cycle++;
-                const lim = parseInt(ui.limit.value);
-                if (lim > 0 && appState.cycle > lim) return forceStop();
+            state.pIdx++;
+            if (state.pIdx >= state.phases.length) {
+                state.pIdx = 0; state.cycle++;
+                const lim = parseInt(dom.total.value);
+                if (lim > 0 && state.cycle > lim) return stop();
             }
-            appState.startTime = now;
-            updatePhaseUI();
+            state.start = now;
+            updateUI();
         }
 
-        const pct = Math.min((Date.now() - appState.startTime) / (appState.phases[appState.currentIdx].t * 1000), 1);
-        const cur = appState.phases[appState.currentIdx];
+        const pct = Math.min((Date.now() - state.start) / (state.phases[state.pIdx].t * 1000), 1);
+        const cur = state.phases[state.pIdx];
 
-        if (appState.modeCircle) {
-            const scale = cur.s[0] + (cur.s[1] - cur.s[0]) * pct;
-            ui.circle.style.transform = `scale(${scale})`;
+        if (state.isCircle) {
+            const s = cur.s[0] + (cur.s[1] - cur.s[0]) * pct;
+            dom.circle.style.transform = `scale(${s})`;
         } else {
-            const height = cur.b[0] + (cur.b[1] - cur.b[0]) * pct;
-            ui.barFill.style.height = `${height}%`;
+            const h = cur.b[0] + (cur.b[1] - cur.b[0]) * pct;
+            dom.barF.style.height = `${h}%`;
         }
-        appState.raf = requestAnimationFrame(animate);
+        state.raf = requestAnimationFrame(loop);
     }
 
-    function updatePhaseUI() {
-        ui.title.innerText = appState.phases[appState.currentIdx].n;
-        ui.counter.innerText = `Цикл ${appState.cycle} из ${ui.limit.value == 0 ? '∞' : ui.limit.value}`;
-        playSound();
+    function updateUI() {
+        dom.title.innerText = state.phases[state.pIdx].n;
+        dom.count.innerText = `Цикл ${state.cycle} из ${dom.total.value == 0 ? '∞' : dom.total.value}`;
+        play();
     }
 
-    function forceStop() {
-        appState.running = false; cancelAnimationFrame(appState.raf);
-        ui.start.style.display = 'block'; ui.stop.style.display = 'none';
-        ui.title.innerText = 'ГОТОВ'; ui.circle.style.transform = 'scale(1)'; ui.barFill.style.height = '0%';
+    function stop() {
+        state.active = false; cancelAnimationFrame(state.raf);
+        dom.start.style.display = 'block'; dom.stop.style.display = 'none';
+        dom.title.innerText = 'ГОТОВ'; dom.circle.style.transform = 'scale(1)'; dom.barF.style.height = '0%';
     }
 
-    ui.start.onclick = () => {
-        appState.phases = generatePhases(); if (!appState.phases.length) return;
-        appState.running = true; appState.currentIdx = 0; appState.cycle = 1; appState.startTime = Date.now();
-        ui.start.style.display = 'none'; ui.stop.style.display = 'block';
-        updatePhaseUI();
-        animate();
+    dom.start.onclick = () => {
+        state.phases = getPhases(); if (!state.phases.length) return;
+        state.active = true; state.pIdx = 0; state.cycle = 1; state.start = Date.now();
+        dom.start.style.display = 'none'; dom.stop.style.display = 'block';
+        updateUI(); loop();
     };
 
-    ui.stop.onclick = forceStop;
+    dom.stop.onclick = stop;
 
-    ui.hold.onchange = () => {
-        document.querySelectorAll('.hold-input-group').forEach(el => ui.hold.checked ? el.classList.remove('hidden') : el.classList.add('hidden'));
+    dom.hold.onchange = () => {
+        document.querySelectorAll('.hold-f').forEach(el => dom.hold.checked ? el.classList.remove('hidden') : el.classList.add('hidden'));
     };
 
-    ui.preset.onchange = () => {
-        const v = ui.preset.value;
-        if (v === '4-4-4-4') { ui.in.value=4; ui.h1.value=4; ui.out.value=4; ui.h2.value=4; ui.hold.checked=true; }
-        else if (v === '4-7-8') { ui.in.value=4; ui.h1.value=7; ui.out.value=8; ui.h2.value=0; ui.hold.checked=true; }
-        else if (v === '4-0-2') { ui.in.value=4; ui.h1.value=0; ui.out.value=2; ui.h2.value=0; ui.hold.checked=false; }
-        ui.hold.onchange();
+    dom.preset.onchange = () => {
+        const v = dom.preset.value;
+        if (v === '4-4-4-4') { dom.in.value=4; dom.h1.value=4; dom.out.value=4; dom.h2.value=4; dom.hold.checked=true; }
+        else if (v === '4-7-8') { dom.in.value=4; dom.h1.value=7; dom.out.value=8; dom.h2.value=0; dom.hold.checked=true; }
+        else if (v === '4-0-2') { dom.in.value=4; dom.h1.value=0; dom.out.value=2; dom.h2.value=0; dom.hold.checked=false; }
+        dom.hold.onchange();
     };
 
-    ui.modeBtn.onclick = () => {
-        appState.modeCircle = !appState.modeCircle;
-        ui.circle.style.display = appState.modeCircle ? 'block' : 'none';
-        document.getElementById('bar-element').style.display = appState.modeCircle ? 'none' : 'block';
-        ui.modeBtn.innerText = appState.modeCircle ? 'РЕЖИМ: КРУГ' : 'РЕЖИМ: СТОЛБЕЦ';
+    dom.mode.onclick = () => {
+        state.isCircle = !state.isCircle;
+        dom.circle.parentElement.style.display = state.isCircle ? 'flex' : 'none';
+        document.getElementById('bar').style.display = state.isCircle ? 'none' : 'block';
+        dom.mode.innerText = state.isCircle ? 'ВИД: КРУГ' : 'ВИД: СТОЛБЕЦ';
     };
 
-    [ui.in, ui.h1, ui.out, ui.h2].forEach(i => i.oninput = () => ui.preset.value = 'custom');
+    [dom.in, dom.h1, dom.out, dom.h2].forEach(i => i.oninput = () => dom.preset.value = 'custom');
 </script>
 </body>
 </html>
