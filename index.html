@@ -25,6 +25,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             padding: env(safe-area-inset-top) env(safe-area-inset-bottom);
+            user-select: none; /* Чтобы не выделялся текст при тапах */
         }
 
         .app-container {
@@ -43,7 +44,7 @@
             .app-container { height: 90vh; border-radius: 25px; }
         }
 
-        .settings-block { flex-shrink: 0; display: grid; gap: 8px; }
+        .settings-block { flex-shrink: 0; display: grid; gap: 8px; z-index: 10; }
         .row { display: flex; justify-content: space-between; align-items: center; min-height: 35px; }
         .label { font-size: 14px; font-weight: 600; }
         
@@ -80,35 +81,39 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-evenly; /* Распределяем элементы равномерно */
             align-items: center;
             min-height: 0;
+            padding: 20px 0;
         }
 
         #phase-title {
             color: var(--accent);
             font-size: 24px;
             font-weight: 800;
-            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            height: 30px;
+            z-index: 10;
         }
 
+        /* Увеличенная область для круга, чтобы он не перекрывал соседей */
         .circle-wrap {
-            width: 140px;
-            height: 140px;
+            width: 240px; 
+            height: 240px;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .circle {
-            width: 100%;
-            height: 100%;
-            aspect-ratio: 1 / 1; /* Только круг */
+            width: 140px;
+            height: 140px;
             border: 5px solid var(--accent);
             border-radius: 50%;
             will-change: transform;
+            transition: border-color 0.3s;
         }
 
         .bar-wrap {
@@ -118,8 +123,10 @@
         .bar-fill { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; }
 
         #mode-btn {
-            margin-top: 20px; border: none; background: none; color: var(--light);
+            border: none; background: none; color: var(--light);
             font-weight: 700; cursor: pointer; font-size: 12px;
+            padding: 10px;
+            z-index: 10;
         }
 
         /* Кнопки */
@@ -182,7 +189,7 @@
             <div id="circle" class="circle"></div>
         </div>
         <div id="bar" class="bar-wrap"><div id="bar-fill" class="bar-fill"></div></div>
-        <button id="mode-btn">СМЕНИТЬ ВИД</button>
+        <button id="mode-btn">ВИД: КРУГ</button>
     </div>
 
     <div class="footer-block">
@@ -195,22 +202,30 @@
 <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function playDeepSound() {
+    // Качественный звук без щелчков (имитация мягкого колокольчика)
+    function playZenSound() {
         if (!document.getElementById('snd-sw').checked) return;
+        
+        const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        // Частота 440Hz (Ля) — мягкая и чистая. Для "глубины" можно 220Hz.
+        osc.frequency.setValueAtTime(440, now);
+        
+        // Envelope (Огибающая) для исключения щелчков
+        gain.gain.setValueAtTime(0, now);
+        // Плавная атака (0.05 сек)
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+        // Длинное мягкое затухание (1.2 сек)
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime); // Тот самый звук
-        
-        gain.gain.setValueAtTime(0, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
-        
-        osc.start();
-        osc.stop(audioCtx.currentTime + 1.5);
+        osc.start(now);
+        osc.stop(now + 1.3);
     }
 
     let state = { active: false, phases: [], pIdx: 0, cycle: 1, start: 0, raf: null, isCircle: true };
@@ -268,7 +283,7 @@
     function updateUI() {
         dom.title.innerText = state.phases[state.pIdx].n;
         dom.count.innerText = `Цикл ${state.cycle} из ${dom.total.value == 0 ? '∞' : dom.total.value}`;
-        playDeepSound();
+        playZenSound();
     }
 
     function stop() {
