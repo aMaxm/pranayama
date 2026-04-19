@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pranayama Timer</title>
     <style>
         :root {
@@ -10,11 +10,11 @@
             --card: #ffffff;
             --accent: #639a88;
             --text: #2c3e50;
-            --light-text: #7f8c8d;
+            --light: #94a3a8;
             --border: #e1e8e7;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--bg);
@@ -23,330 +23,285 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            font-family: -apple-system, system-ui, sans-serif;
             overflow: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
-        /* Ограничиваем карточку на десктопе */
-        .app-container {
+        /* Адаптивная карточка */
+        .app {
             background: var(--card);
             width: 100%;
-            max-width: 380px; /* Компактная ширина */
-            height: 100dvh;
-            max-height: 800px; /* Ограничение высоты на десктопе */
-            padding: 30px 25px;
+            max-width: 400px;
+            height: 100%; /* Занимает доступное пространство */
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
-        /* На мобилках на весь экран */
-        @media (max-width: 500px) {
-            .app-container {
-                max-height: 100dvh;
-                border-radius: 0;
+        @media (min-width: 500px) and (min-height: 600px) {
+            .app {
+                height: 750px;
+                border-radius: 30px;
             }
         }
 
-        .settings { display: grid; gap: 10px; }
-        .row { display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
+        /* Настройки (верх) */
+        .settings { display: grid; gap: 10px; flex-shrink: 0; }
+        .row { display: flex; justify-content: space-between; align-items: center; min-height: 38px; }
+        .label { font-size: 14px; font-weight: 600; }
         
-        .label { font-size: 15px; font-weight: 500; }
-
         select, input {
-            padding: 8px 12px;
+            padding: 8px 10px;
             border: 1px solid var(--border);
             border-radius: 10px;
-            background: #fcfdfd;
+            background: #f9fbfb;
             font-size: 14px;
+            width: 140px;
             color: var(--text);
-            width: 150px;
         }
 
-        .phase-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 5px;
-        }
+        .phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .box { display: flex; flex-direction: column; gap: 3px; }
+        .box span { font-size: 10px; text-transform: uppercase; color: var(--light); font-weight: 700; }
+        .box input { width: 100%; }
 
-        .input-box { display: flex; flex-direction: column; gap: 4px; }
-        .input-box span { font-size: 10px; text-transform: uppercase; color: var(--light-text); letter-spacing: 0.5px; }
-        .input-box input { width: 100%; }
-
-        /* Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 22px;
-        }
+        /* Переключатель */
+        .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-            position: absolute; cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .3s; border-radius: 22px;
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: #d1d9d8; transition: .3s; border-radius: 22px;
         }
         .slider:before {
-            position: absolute; content: ""; height: 16px; width: 16px;
-            left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%;
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background: white; transition: .3s; border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider { background: var(--accent); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* Визуализатор */
-        .viz-box {
-            flex-grow: 1;
+        /* Визуализатор (центр - тянется) */
+        .visual-area {
+            flex: 1; /* Ключевое: занимает всё свободное место */
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
-            min-height: 260px; /* Фикс высота контейнера */
+            min-height: 200px;
         }
 
         #phase-title {
             color: var(--accent);
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 40px;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 30px;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
         .circle {
-            width: 110px;
-            height: 110px;
-            border: 4px solid var(--accent);
+            width: 120px;
+            height: 120px;
+            border: 5px solid var(--accent);
             border-radius: 50%;
             will-change: transform;
         }
 
-        .bar-wrap {
-            width: 40px;
+        .bar-container {
+            width: 45px;
             height: 180px;
             background: #eee;
-            border-radius: 20px;
+            border-radius: 25px;
             overflow: hidden;
             position: relative;
             display: none;
         }
+        .bar-inner { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; will-change: height; }
 
-        .bar-fill {
-            position: absolute; bottom: 0; width: 100%;
-            background: var(--accent); height: 0%; will-change: height;
+        #mode-btn {
+            margin-top: 25px; border: none; background: none; color: var(--light);
+            font-weight: 600; cursor: pointer; font-size: 13px;
         }
 
-        /* Футер */
-        .footer { text-align: center; }
-        .counter { font-size: 16px; color: var(--light-text); margin-bottom: 20px; }
-
-        .btn {
+        /* Управление (низ) */
+        .controls { flex-shrink: 0; padding-top: 10px; text-align: center; }
+        .status { font-size: 15px; color: var(--light); margin-bottom: 15px; font-weight: 500; }
+        
+        .main-btn {
             width: 100%;
             padding: 18px;
             border: none;
-            border-radius: 16px;
+            border-radius: 18px;
             font-size: 18px;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
             color: white;
             transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(99, 154, 136, 0.2);
         }
-        .btn-start { background: var(--accent); }
-        .btn-stop { background: #e74c3c; display: none; }
+        .start { background: var(--accent); }
+        .stop { background: #e74c3c; display: none; }
+        .main-btn:active { transform: scale(0.97); }
 
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app">
     <div class="settings">
         <div class="row">
-            <span class="label">Пресет</span>
+            <span class="label">Пакет</span>
             <select id="preset">
-                <option value="custom">Свои значения</option>
-                <option value="4-4-4-4">Квадрат (4-4-4-4)</option>
-                <option value="4-7-8">Сон (4-7-8)</option>
-                <option value="4-0-2">Бодрость (4-0-2)</option>
+                <option value="custom">Свой</option>
+                <option value="4-4-4-4">Квадрат</option>
+                <option value="4-7-8">Сон</option>
+                <option value="4-0-2">Бодрость</option>
             </select>
         </div>
-
         <div class="row">
             <span class="label">Задержки</span>
             <label class="switch">
-                <input type="checkbox" id="hold-switch" checked>
+                <input type="checkbox" id="hold-sw" checked>
                 <span class="slider"></span>
             </label>
         </div>
-
-        <div class="phase-grid">
-            <div class="input-box"><span>Вдох</span><input type="number" id="in-v" value="4"></div>
-            <div class="input-box hold-el"><span>Задержка</span><input type="number" id="h1-v" value="4"></div>
-            <div class="input-box"><span>Выдох</span><input type="number" id="out-v" value="4"></div>
-            <div class="input-box hold-el"><span>Задержка</span><input type="number" id="h2-v" value="4"></div>
+        <div class="phase-grid" id="grid">
+            <div class="box"><span>Вдох</span><input type="number" id="in" value="4"></div>
+            <div class="box h-el"><span>Задержка</span><input type="number" id="h1" value="4"></div>
+            <div class="box"><span>Выдох</span><input type="number" id="out" value="4"></div>
+            <div class="box h-el"><span>Задержка</span><input type="number" id="h2" value="4"></div>
         </div>
-
         <div class="row">
             <span class="label">Циклы</span>
-            <input type="number" id="total-v" value="0" style="width: 70px;">
+            <input type="number" id="total" value="0" style="width: 70px;">
         </div>
-
         <div class="row">
-            <span class="label">Звук (Гонг)</span>
+            <span class="label">Звук</span>
             <label class="switch">
-                <input type="checkbox" id="sound-switch" checked>
+                <input type="checkbox" id="snd-sw" checked>
                 <span class="slider"></span>
             </label>
         </div>
     </div>
 
-    <div class="viz-box">
+    <div class="visual-area">
         <div id="phase-title">ГОТОВ</div>
         <div id="circle" class="circle"></div>
-        <div id="bar-wrap" class="bar-wrap"><div id="bar-fill" class="bar-fill"></div></div>
-        
-        <select id="mode-sel" style="margin-top: 30px; border:none; background:none; width: auto; color: #999; font-weight: 600;">
-            <option value="circle">Режим: Круг</option>
-            <option value="bar">Режим: Столбец</option>
-        </select>
+        <div id="bar" class="bar-container"><div id="bar-in" class="bar-inner"></div></div>
+        <button id="mode-btn">ВИД: КРУГ</button>
     </div>
 
-    <div class="footer">
-        <div id="counter" class="counter">Цикл 0 из 0</div>
-        <button id="start-btn" class="btn btn-start">СТАРТ</button>
-        <button id="stop-btn" class="btn btn-stop">СТОП</button>
+    <div class="controls">
+        <div id="counter" class="status">Цикл 0 из 0</div>
+        <button id="start" class="main-btn start">СТАРТ</button>
+        <button id="stop" class="main-btn stop">СТОП</button>
     </div>
 </div>
 
 <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playGong() {
-        if (!document.getElementById('sound-switch').checked) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime); // Глубокий звук
-        gain.gain.setValueAtTime(0, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 1.5);
+    function playBell() {
+        if (!document.getElementById('snd-sw').checked) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type = 'sine'; o.frequency.setValueAtTime(880, audioCtx.currentTime); // Мягкий высокий тон
+        g.gain.setValueAtTime(0, audioCtx.currentTime);
+        g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        o.start(); o.stop(audioCtx.currentTime + 0.5);
     }
 
-    let state = {
-        active: false,
-        phases: [],
-        pIdx: 0,
-        cycle: 1,
-        start: 0,
-        raf: null
+    let state = { running: false, phases: [], pIdx: 0, cycle: 1, startT: 0, raf: null, isCircle: true };
+
+    const d = {
+        in: document.getElementById('in'), h1: document.getElementById('h1'),
+        out: document.getElementById('out'), h2: document.getElementById('h2'),
+        total: document.getElementById('total'), preset: document.getElementById('preset'),
+        hold: document.getElementById('hold-sw'), start: document.getElementById('start'),
+        stop: document.getElementById('stop'), title: document.getElementById('phase-title'),
+        circle: document.getElementById('circle'), barIn: document.getElementById('bar-in'),
+        count: document.getElementById('counter'), mode: document.getElementById('mode-btn')
     };
 
-    const dom = {
-        in: document.getElementById('in-v'),
-        h1: document.getElementById('h1-v'),
-        out: document.getElementById('out-v'),
-        h2: document.getElementById('h2-v'),
-        total: document.getElementById('total-v'),
-        preset: document.getElementById('preset'),
-        holdSw: document.getElementById('hold-switch'),
-        mode: document.getElementById('mode-sel'),
-        title: document.getElementById('phase-title'),
-        circle: document.getElementById('circle'),
-        bar: document.getElementById('bar-fill'),
-        count: document.getElementById('counter'),
-        btnStart: document.getElementById('start-btn'),
-        btnStop: document.getElementById('stop-btn')
-    };
-
-    function getActivePhases() {
-        const h = dom.holdSw.checked;
+    function getPhases() {
+        const h = d.hold.checked;
         return [
-            { n: 'Вдох', t: parseInt(dom.in.value), s: [1, 1.6], b: [0, 100] },
-            { n: 'Задержка', t: h ? parseInt(dom.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
-            { n: 'Выдох', t: parseInt(dom.out.value), s: [1.6, 1], b: [100, 0] },
-            { n: 'Задержка', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1], b: [0, 0] }
+            { n: 'Вдох', t: parseInt(d.in.value), s: [1, 1.6], b: [0, 100] },
+            { n: 'Пауза', t: h ? parseInt(d.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
+            { n: 'Выдох', t: parseInt(d.out.value), s: [1.6, 1], b: [100, 0] },
+            { n: 'Пауза', t: h ? parseInt(d.h2.value) : 0, s: [1, 1], b: [0, 0] }
         ].filter(p => p.t > 0);
     }
 
-    function tick() {
-        if (!state.active) return;
+    function loop() {
+        if (!state.running) return;
         const now = Date.now();
-        const elapsed = (now - state.start) / 1000;
+        const elapsed = (now - state.startT) / 1000;
         const p = state.phases[state.pIdx];
 
         if (elapsed >= p.t) {
             state.pIdx++;
             if (state.pIdx >= state.phases.length) {
-                state.pIdx = 0;
-                state.cycle++;
-                const limit = parseInt(dom.total.value);
-                if (limit > 0 && state.cycle > limit) return stop();
+                state.pIdx = 0; state.cycle++;
+                const lim = parseInt(d.total.value);
+                if (lim > 0 && state.cycle > lim) return reset();
             }
-            state.start = now;
-            updatePhaseUI();
+            state.startT = now;
+            playBell();
+            d.title.innerText = state.phases[state.pIdx].n;
+            d.count.innerText = `Цикл ${state.cycle} из ${d.total.value == 0 ? '∞' : d.total.value}`;
         }
 
-        const progress = Math.min((Date.now() - state.start) / (state.phases[state.pIdx].t * 1000), 1);
+        const pct = Math.min((Date.now() - state.startT) / (state.phases[state.pIdx].t * 1000), 1);
         const cur = state.phases[state.pIdx];
 
-        if (dom.mode.value === 'circle') {
-            const s = cur.s[0] + (cur.s[1] - cur.s[0]) * progress;
-            dom.circle.style.transform = `scale(${s})`;
+        if (state.isCircle) {
+            const s = cur.s[0] + (cur.s[1] - cur.s[0]) * pct;
+            d.circle.style.transform = `scale(${s})`;
         } else {
-            const h = cur.b[0] + (cur.b[1] - cur.b[0]) * progress;
-            dom.bar.style.height = `${h}%`;
+            const h = cur.b[0] + (cur.b[1] - cur.b[0]) * pct;
+            d.barIn.style.height = `${h}%`;
         }
-        state.raf = requestAnimationFrame(tick);
+        state.raf = requestAnimationFrame(loop);
     }
 
-    function updatePhaseUI() {
-        dom.title.innerText = state.phases[state.pIdx].n;
-        dom.count.innerText = `Цикл ${state.cycle} из ${dom.total.value == 0 ? '∞' : dom.total.value}`;
-        playGong();
+    function reset() {
+        state.running = false; cancelAnimationFrame(state.raf);
+        d.start.style.display = 'block'; d.stop.style.display = 'none';
+        d.title.innerText = 'ГОТОВ'; d.circle.style.transform = 'scale(1)'; d.barIn.style.height = '0%';
     }
 
-    function start() {
+    d.start.onclick = () => {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        state.phases = getActivePhases();
-        if (!state.phases.length) return;
-        state.active = true; state.pIdx = 0; state.cycle = 1; state.start = Date.now();
-        dom.btnStart.style.display = 'none'; dom.btnStop.style.display = 'block';
-        updatePhaseUI();
-        tick();
-    }
+        state.phases = getPhases(); if (!state.phases.length) return;
+        state.running = true; state.pIdx = 0; state.cycle = 1; state.startT = Date.now();
+        d.start.style.display = 'none'; d.stop.style.display = 'block';
+        playBell(); d.title.innerText = state.phases[0].n;
+        d.count.innerText = `Цикл 1 из ${d.total.value == 0 ? '∞' : d.total.value}`;
+        loop();
+    };
 
-    function stop() {
-        state.active = false;
-        cancelAnimationFrame(state.raf);
-        dom.btnStart.style.display = 'block'; dom.btnStop.style.display = 'none';
-        dom.title.innerText = 'ГОТОВ';
-        dom.circle.style.transform = 'scale(1)';
-        dom.bar.style.height = '0%';
-    }
-
-    dom.btnStart.onclick = start;
-    dom.btnStop.onclick = stop;
-    dom.holdSw.onchange = () => {
-        document.querySelectorAll('.hold-el').forEach(el => dom.holdSw.checked ? el.classList.remove('hidden') : el.classList.add('hidden'));
+    d.stop.onclick = reset;
+    d.hold.onchange = () => {
+        document.querySelectorAll('.h-el').forEach(el => d.hold.checked ? el.classList.remove('hidden') : el.classList.add('hidden'));
     };
-    dom.preset.onchange = () => {
-        const v = dom.preset.value;
-        if (v === '4-4-4-4') { dom.in.value=4; dom.h1.value=4; dom.out.value=4; dom.h2.value=4; dom.holdSw.checked=true; }
-        else if (v === '4-7-8') { dom.in.value=4; dom.h1.value=7; dom.out.value=8; dom.h2.value=0; dom.holdSw.checked=true; }
-        else if (v === '4-0-2') { dom.in.value=4; dom.h1.value=0; dom.out.value=2; dom.h2.value=0; dom.holdSw.checked=false; }
-        dom.holdSw.onchange();
+    d.preset.onchange = () => {
+        const v = d.preset.value;
+        if (v === '4-4-4-4') { d.in.value=4; d.h1.value=4; d.out.value=4; d.h2.value=4; d.hold.checked=true; }
+        else if (v === '4-7-8') { d.in.value=4; d.h1.value=7; d.out.value=8; d.h2.value=0; d.hold.checked=true; }
+        else if (v === '4-0-2') { d.in.value=4; d.h1.value=0; d.out.value=2; d.h2.value=0; d.hold.checked=false; }
+        d.hold.onchange();
     };
-    dom.mode.onchange = () => {
-        const isC = dom.mode.value === 'circle';
-        dom.circle.style.display = isC ? 'block' : 'none';
-        document.getElementById('bar-wrap').style.display = isC ? 'none' : 'block';
+    d.mode.onclick = () => {
+        state.isCircle = !state.isCircle;
+        d.circle.style.display = state.isCircle ? 'block' : 'none';
+        document.getElementById('bar').style.display = state.isCircle ? 'none' : 'block';
+        d.mode.innerText = state.isCircle ? 'ВИД: КРУГ' : 'ВИД: СТОЛБЕЦ';
     };
-    [dom.in, dom.h1, dom.out, dom.h2].forEach(i => i.oninput = () => dom.preset.value = 'custom');
+    [d.in, d.h1, d.out, d.h2].forEach(i => i.oninput = () => d.preset.value = 'custom');
 </script>
 </body>
 </html>
