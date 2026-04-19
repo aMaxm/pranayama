@@ -27,7 +27,6 @@
             padding: env(safe-area-inset-top) env(safe-area-inset-bottom);
         }
 
-        /* Контейнер-карточка */
         .app-container {
             background: var(--card);
             width: 100%;
@@ -38,18 +37,13 @@
             flex-direction: column;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            position: relative;
         }
 
         @media (min-width: 500px) and (min-height: 600px) {
-            .app-container {
-                height: 90vh;
-                border-radius: 25px;
-            }
+            .app-container { height: 90vh; border-radius: 25px; }
         }
 
-        /* Верхняя часть: Настройки */
-        .settings-block { flex-shrink: 0; display: grid; gap: 10px; }
+        .settings-block { flex-shrink: 0; display: grid; gap: 8px; }
         .row { display: flex; justify-content: space-between; align-items: center; min-height: 35px; }
         .label { font-size: 14px; font-weight: 600; }
         
@@ -68,7 +62,6 @@
         .input-group span { font-size: 10px; text-transform: uppercase; color: var(--light); font-weight: 700; }
         .input-group input { width: 100%; }
 
-        /* Тумблеры */
         .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
@@ -82,14 +75,14 @@
         input:checked + .slider { background: var(--accent); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* Центральная часть: Визуализатор */
+        /* Визуализатор */
         .viz-section {
-            flex: 1; /* Занимает всё свободное место */
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 0; /* Чтобы flex-item мог сжиматься */
+            min-height: 0;
         }
 
         #phase-title {
@@ -107,26 +100,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
         }
 
         .circle {
             width: 100%;
             height: 100%;
-            aspect-ratio: 1 / 1; /* ЖЕСТКИЙ КРУГ */
+            aspect-ratio: 1 / 1; /* Только круг */
             border: 5px solid var(--accent);
             border-radius: 50%;
             will-change: transform;
         }
 
         .bar-wrap {
-            width: 40px;
-            height: 180px;
-            background: #eee;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            display: none;
+            width: 40px; height: 180px; background: #eee; border-radius: 20px;
+            overflow: hidden; position: relative; display: none;
         }
         .bar-fill { position: absolute; bottom: 0; width: 100%; background: var(--accent); height: 0%; }
 
@@ -135,20 +122,13 @@
             font-weight: 700; cursor: pointer; font-size: 12px;
         }
 
-        /* Нижняя часть: Кнопки */
+        /* Кнопки */
         .footer-block { flex-shrink: 0; padding-top: 10px; text-align: center; }
         .cycle-info { font-size: 15px; color: var(--light); margin-bottom: 12px; font-weight: 600; }
         
         .main-btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 16px;
-            font-size: 18px;
-            font-weight: 800;
-            cursor: pointer;
-            color: white;
-            transition: 0.2s;
+            width: 100%; padding: 18px; border: none; border-radius: 16px;
+            font-size: 18px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s;
         }
         .btn-start { background: var(--accent); }
         .btn-stop { background: #e74c3c; display: none; }
@@ -188,7 +168,7 @@
             <input type="number" id="total" value="0" style="width: 70px;">
         </div>
         <div class="row">
-            <span class="label">Звук (Чаша)</span>
+            <span class="label">Звук (300 Гц)</span>
             <label class="switch">
                 <input type="checkbox" id="snd-sw" checked>
                 <span class="slider"></span>
@@ -213,14 +193,24 @@
 </div>
 
 <script>
-    // Та самая поющая чаша
-    const bowlSound = new Audio("data:audio/wav;base64,UklGRmYBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT4BAACAgICAgICAgICAWlpaWlpGRkZGRkZGRjpqWlpGRmtpaWlaampraGtGRmpra2tra3NGRmNraytzWnNaWlo8SjVaPDw8PEpqampqckZqc2tra3NaSjw5OTk8SkZqc2tzSkZKSkZKSmtKSmtra2uDc3Nra4uLc3Nzc4tra4uDa2trc3N7g4ODWnNra3tzampqckZqckY8Ojp7Ojp6amp6ckp6Wkpqc2tqa3Nzc3N7ckpKSkpqckpqa4trckpKSkpra3Nzc4trWlpySkZqSjw8PEp6Sjo6Ojo6Sjp7Sjo5OTo8Sjw5PEpqc2tqWnp7c3tzcmp6ckpqa2tra3Nqa3NaSnpqckp6Sjo8ckZKSjo5OTlKSjo6ckY5Snpqa3NzSkY8SkZKSjo5OQAAAAA=");
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function play() {
-        if (document.getElementById('snd-sw').checked) {
-            bowlSound.currentTime = 0;
-            bowlSound.play().catch(() => {});
-        }
+    function playDeepSound() {
+        if (!document.getElementById('snd-sw').checked) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime); // Тот самый звук
+        
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 1.5);
     }
 
     let state = { active: false, phases: [], pIdx: 0, cycle: 1, start: 0, raf: null, isCircle: true };
@@ -239,9 +229,9 @@
         const h = dom.hold.checked;
         return [
             { n: 'Вдох', t: parseInt(dom.in.value), s: [1, 1.6], b: [0, 100] },
-            { n: 'Задержка', t: h ? parseInt(dom.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
+            { n: 'Пауза', t: h ? parseInt(dom.h1.value) : 0, s: [1.6, 1.6], b: [100, 100] },
             { n: 'Выдох', t: parseInt(dom.out.value), s: [1.6, 1], b: [100, 0] },
-            { n: 'Задержка', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1], b: [0, 0] }
+            { n: 'Пауза', t: h ? parseInt(dom.h2.value) : 0, s: [1, 1], b: [0, 0] }
         ].filter(p => p.t > 0);
     }
 
@@ -278,7 +268,7 @@
     function updateUI() {
         dom.title.innerText = state.phases[state.pIdx].n;
         dom.count.innerText = `Цикл ${state.cycle} из ${dom.total.value == 0 ? '∞' : dom.total.value}`;
-        play();
+        playDeepSound();
     }
 
     function stop() {
@@ -288,6 +278,7 @@
     }
 
     dom.start.onclick = () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         state.phases = getPhases(); if (!state.phases.length) return;
         state.active = true; state.pIdx = 0; state.cycle = 1; state.start = Date.now();
         dom.start.style.display = 'none'; dom.stop.style.display = 'block';
@@ -295,11 +286,9 @@
     };
 
     dom.stop.onclick = stop;
-
     dom.hold.onchange = () => {
         document.querySelectorAll('.hold-f').forEach(el => dom.hold.checked ? el.classList.remove('hidden') : el.classList.add('hidden'));
     };
-
     dom.preset.onchange = () => {
         const v = dom.preset.value;
         if (v === '4-4-4-4') { dom.in.value=4; dom.h1.value=4; dom.out.value=4; dom.h2.value=4; dom.hold.checked=true; }
@@ -307,14 +296,12 @@
         else if (v === '4-0-2') { dom.in.value=4; dom.h1.value=0; dom.out.value=2; dom.h2.value=0; dom.hold.checked=false; }
         dom.hold.onchange();
     };
-
     dom.mode.onclick = () => {
         state.isCircle = !state.isCircle;
         dom.circle.parentElement.style.display = state.isCircle ? 'flex' : 'none';
         document.getElementById('bar').style.display = state.isCircle ? 'none' : 'block';
         dom.mode.innerText = state.isCircle ? 'ВИД: КРУГ' : 'ВИД: СТОЛБЕЦ';
     };
-
     [dom.in, dom.h1, dom.out, dom.h2].forEach(i => i.oninput = () => dom.preset.value = 'custom');
 </script>
 </body>
