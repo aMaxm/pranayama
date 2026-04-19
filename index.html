@@ -14,6 +14,7 @@
             --border-color: #e2e8e5;
         }
 
+        /* Жестко фиксируем фон на весь экран */
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -23,30 +24,40 @@
             align-items: center;
             height: 100dvh; 
             margin: 0;
-            padding: 0;
-            overflow: hidden; 
+            padding: 15px; /* Защитный отступ от краев экрана */
             box-sizing: border-box;
+            overflow: hidden; /* Фон никогда не скроллится */
         }
 
+        /* Непробиваемый контейнер */
         .container {
             background: var(--card-bg);
-            padding: 1.5rem;
             border-radius: 24px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.06);
             width: 100%;
             max-width: 400px;
-            max-height: 96dvh; 
-            box-sizing: border-box;
+            max-height: 100%; /* Не дает карточке стать больше экрана */
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            text-align: center;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            /* Если экран микроскопический - скролл появится ТОЛЬКО внутри белой карточки */
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .container::-webkit-scrollbar { display: none; }
+
+        /* Запрещаем элементам сплющиваться при нехватке высоты */
+        h1, .status-area, .breathing-area, .controls-section, .settings-grid, button {
+            flex-shrink: 0;
         }
 
         h1 {
             margin: 0 0 10px 0;
             font-size: 1.4rem;
             font-weight: 600;
+            text-align: center;
         }
 
         .status-area {
@@ -74,12 +85,10 @@
             display: none;
         }
 
-        /* Область визуализации с увеличенным пространством, чтобы круг не наезжал на текст */
+        /* Выделенный блок анимации, куда текст не может попасть */
         .breathing-area {
             position: relative;
-            flex: 1; 
-            min-height: 180px; /* Увеличено, чтобы вместить круг 160px */
-            max-height: 220px;
+            min-height: 180px; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -227,22 +236,30 @@
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
-            margin-top: auto;
+            margin-top: auto; /* Прижимает кнопку к низу, если есть лишнее место */
         }
 
         button:active { transform: scale(0.98); }
         button.stop { background: #e07a5f; }
 
-        @media (max-height: 650px) {
-            .container { padding: 1rem; }
+        /* АДАПТИВНОСТЬ ПО ВЫСОТЕ (Для мобильных телефонов)
+         Делает элементы компактнее, чтобы все уместилось на 1 экране без скролла.
+        */
+        @media (max-height: 750px) {
+            .container { padding: 1.2rem; }
             h1 { font-size: 1.2rem; margin-bottom: 5px; }
+            .status-area { min-height: 38px; }
             .toggle-row { padding: 6px 0; }
-            .settings-grid { margin-bottom: 10px; gap: 8px; }
+            .settings-grid { gap: 8px; margin-bottom: 12px; }
             .input-group input { padding: 6px; }
             button { padding: 12px; }
-            #timer-text { font-size: 2rem; }
-            .status-area { min-height: 38px; }
-            .breathing-area { min-height: 165px; } /* Безопасная высота даже на мелких экранах */
+            
+            /* Уменьшаем круг и его коробку */
+            .circle { width: 80px; height: 80px; }
+            /* При scale(1.6) круг станет 128px. Значит 140px высоты короба хватит с запасом! */
+            .breathing-area { min-height: 140px; margin: 5px 0 10px 0; }
+            .bar-container { width: 60px; height: 120px; }
+            #timer-text { font-size: 2.2rem; }
         }
     </style>
 </head>
@@ -261,7 +278,6 @@
             <div class="bar-container" id="b-bar-container">
                 <div class="bar-fill" id="b-bar"></div>
             </div>
-
             <div class="info">
                 <div id="timer-text">--</div>
             </div>
@@ -360,7 +376,6 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        // Новая, полностью антищелчковая логика гонга
         function playGong(frequency = 329.63, duration = 2.5) {
             if (!document.getElementById('sound-toggle').checked) return;
             if (!audioCtx) return;
@@ -373,25 +388,17 @@
             
             osc.frequency.setValueAtTime(frequency, now);
 
-            // Начинаем строго с 0
+            // Идеальное сглаживание без щелчков
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(0, now);
-            
-            // Плавное нарастание (убирает щелчок при старте)
             gainNode.gain.linearRampToValueAtTime(0.25, now + 0.1);
-            
-            // Длинное затухание почти до конца
             gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration - 0.1);
-            
-            // Гарантированный уход в 0 перед отключением
             gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             osc.start(now);
-            
-            // Отключаем осциллятор с небольшим запасом по времени, когда звук уже точно 0
             osc.stop(now + duration + 0.05); 
         }
 
