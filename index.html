@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Пранаяма Таймер</title>
     <style>
         :root {
@@ -21,43 +21,50 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            /* Используем dvh для точного вписывания в мобильные экраны с учетом UI браузера */
+            height: 100dvh; 
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            overflow: hidden; /* Строго запрещаем скролл */
             box-sizing: border-box;
         }
 
         .container {
             background: var(--card-bg);
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 24px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.06);
             width: 100%;
             max-width: 400px;
+            max-height: 96dvh; /* Контейнер не превышает высоту экрана */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             text-align: center;
         }
 
         h1 {
-            margin-top: 0;
-            font-size: 1.5rem;
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
             font-weight: 600;
-            margin-bottom: 5px;
         }
 
         /* Область визуализации */
         .breathing-area {
             position: relative;
-            height: 220px;
+            flex: 1; /* Адаптивная высота */
+            min-height: 140px;
+            max-height: 200px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 1rem 0;
+            margin: 10px 0;
         }
 
-        /* Визуал: Круг */
         .circle {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             background: rgba(99, 154, 136, 0.15);
             border: 2px solid var(--primary);
             border-radius: 50%;
@@ -67,10 +74,9 @@
             transform: scale(1);
         }
 
-        /* Визуал: Столбец */
         .bar-container {
-            width: 80px;
-            height: 200px;
+            width: 70px;
+            height: 150px;
             background: rgba(99, 154, 136, 0.1);
             border: 2px solid var(--primary);
             border-radius: 16px;
@@ -86,7 +92,7 @@
             height: 100%;
             background: rgba(99, 154, 136, 0.4);
             transform-origin: bottom;
-            transform: scaleY(0); /* Опускается ровно до нуля */
+            transform: scaleY(0);
             transition: transform 0.5s ease-out;
         }
 
@@ -97,38 +103,38 @@
         }
 
         #cycle-text {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             display: none;
         }
 
         #phase-text {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
 
         #timer-text {
             font-size: 2.2rem;
             font-weight: 300;
-            line-height: 1;
+            line-height: 1.1;
         }
 
         /* Настройки и переключатели */
         .controls-section {
             text-align: left;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .toggle-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
         }
 
@@ -137,7 +143,7 @@
         }
 
         select {
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
             background: var(--bg-color);
@@ -145,34 +151,34 @@
             font-family: inherit;
             outline: none;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        /* Свитчер (тумблер) */
+        /* Свитчер */
         .switch {
             position: relative;
             display: inline-block;
-            width: 44px;
-            height: 24px;
+            width: 40px;
+            height: 22px;
         }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .4s; border-radius: 24px;
+            background-color: #ccc; transition: .4s; border-radius: 22px;
         }
         .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
             background-color: white; transition: .3s; border-radius: 50%;
         }
         input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
         /* Сетка времени */
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
         .input-group {
@@ -182,27 +188,25 @@
         }
 
         .input-group label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .input-group input {
             width: 100%;
-            padding: 8px 10px;
+            padding: 8px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background: #fafcfb;
             color: var(--text-main);
-            font-size: 1rem;
+            font-size: 0.95rem;
             box-sizing: border-box;
             outline: none;
             transition: border-color 0.3s;
         }
 
-        .input-group input:focus {
-            border-color: var(--primary);
-        }
+        .input-group input:focus { border-color: var(--primary); }
 
         button {
             background: var(--primary);
@@ -211,17 +215,25 @@
             padding: 14px 20px;
             border-radius: 12px;
             width: 100%;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
+            margin-top: auto;
         }
 
         button:active { transform: scale(0.98); }
         button.stop { background: #e07a5f; }
 
-        @media (max-width: 400px) {
-            .container { padding: 1.5rem; }
+        /* Компактный режим для очень маленьких экранов (например, iPhone SE) */
+        @media (max-height: 650px) {
+            .container { padding: 1rem; }
+            h1 { font-size: 1.2rem; }
+            .toggle-row { padding: 6px 0; }
+            .settings-grid { margin-bottom: 10px; gap: 8px; }
+            .input-group input { padding: 6px; }
+            button { padding: 12px; }
+            #timer-text { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -278,7 +290,7 @@
 
         <div class="settings-grid" id="settings-grid">
             <div class="input-group">
-                <label>Вдох (сек)</label>
+                <label>Вдох (с)</label>
                 <input type="number" id="t-in" value="4" min="1">
             </div>
             <div class="input-group hold-group">
@@ -286,7 +298,7 @@
                 <input type="number" id="t-hold1" value="4" min="0">
             </div>
             <div class="input-group">
-                <label>Выдох (сек)</label>
+                <label>Выдох (с)</label>
                 <input type="number" id="t-out" value="4" min="1">
             </div>
             <div class="input-group hold-group">
@@ -332,7 +344,7 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        function playGong(frequency = 329.63, duration = 2) {
+        function playGong(frequency = 329.63, duration = 2.5) {
             if (!document.getElementById('sound-toggle').checked) return;
             if (!audioCtx) return;
 
@@ -340,16 +352,28 @@
             const gainNode = audioCtx.createGain();
 
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            const now = audioCtx.currentTime;
+            
+            osc.frequency.setValueAtTime(frequency, now);
 
-            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            // Решение проблемы щелчков: плавные огибающие (Envelopes)
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(0, now);
+            
+            // Мягкая атака за 0.1 сек (убирает щелчок в начале)
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.1);
+            
+            // Плавное затухание почти до конца
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration - 0.2);
+            
+            // Точный уход в абсолютный ноль (убирает щелчок при остановке)
+            gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            
+            osc.start(now);
+            osc.stop(now + duration + 0.1); // Останавливаем чуть позже нулевой громкости
         }
 
         function applyPreset() {
@@ -407,7 +431,6 @@
             
             maxCycles = parseInt(document.getElementById('cycles-input').value) || 0;
 
-            // Свойство state: 'high' (заполнен) или 'low' (пуст)
             phases = [
                 { name: 'Вдох', time: tIn, state: 'high' },
                 { name: 'Задержка', time: tHold1, state: 'high' },
@@ -439,8 +462,8 @@
                 currentCycle++;
                 if (maxCycles > 0 && currentCycle > maxCycles) {
                     stopTimer();
-                    playGong(440, 2.5);
-                    setTimeout(() => playGong(440, 2.5), 400);
+                    playGong(440, 3);
+                    setTimeout(() => playGong(440, 3), 500);
                     return;
                 }
             }
@@ -457,9 +480,6 @@
             const visType = visTypeSelect.value;
             const transitionStyle = `transform ${phase.time}s linear`;
 
-            // Логика масштабирования разделена:
-            // Для круга 1.6 (вдох) и 1 (выдох)
-            // Для столбца 1 (вдох) и 0 (выдох - пустой)
             let targetScale = 1;
             if (visType === 'circle') {
                 targetScale = (phase.state === 'high') ? 1.6 : 1;
@@ -508,7 +528,6 @@
             barFill.style.transform = 'scaleY(0)'; 
         }
 
-        // Инициализация интерфейса
         toggleHolds();
         updateVisualizer();
     </script>
