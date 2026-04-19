@@ -21,11 +21,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Используем dvh для точного вписывания в мобильные экраны с учетом UI браузера */
             height: 100dvh; 
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Строго запрещаем скролл */
+            overflow: hidden; 
             box-sizing: border-box;
         }
 
@@ -36,7 +35,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.06);
             width: 100%;
             max-width: 400px;
-            max-height: 96dvh; /* Контейнер не превышает высоту экрана */
+            max-height: 96dvh; 
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -45,21 +44,47 @@
         }
 
         h1 {
-            margin: 0 0 5px 0;
+            margin: 0 0 10px 0;
             font-size: 1.4rem;
             font-weight: 600;
+        }
+
+        /* Зона статуса (Вдох, Выдох, Циклы) - вынесена из фигур */
+        .status-area {
+            min-height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        #phase-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--primary); /* Текст теперь в цвет границ */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #cycle-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: none;
         }
 
         /* Область визуализации */
         .breathing-area {
             position: relative;
-            flex: 1; /* Адаптивная высота */
-            min-height: 140px;
-            max-height: 200px;
+            flex: 1; 
+            min-height: 130px;
+            max-height: 180px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 10px 0;
+            margin: 5px 0 15px 0;
         }
 
         .circle {
@@ -76,7 +101,7 @@
 
         .bar-container {
             width: 70px;
-            height: 150px;
+            height: 140px;
             background: rgba(99, 154, 136, 0.1);
             border: 2px solid var(--primary);
             border-radius: 16px;
@@ -102,24 +127,11 @@
             text-align: center;
         }
 
-        #cycle-text {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-            display: none;
-        }
-
-        #phase-text {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0;
-        }
-
         #timer-text {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 300;
-            line-height: 1.1;
+            line-height: 1;
+            color: var(--text-main);
         }
 
         /* Настройки и переключатели */
@@ -225,15 +237,15 @@
         button:active { transform: scale(0.98); }
         button.stop { background: #e07a5f; }
 
-        /* Компактный режим для очень маленьких экранов (например, iPhone SE) */
         @media (max-height: 650px) {
             .container { padding: 1rem; }
-            h1 { font-size: 1.2rem; }
+            h1 { font-size: 1.2rem; margin-bottom: 5px; }
             .toggle-row { padding: 6px 0; }
             .settings-grid { margin-bottom: 10px; gap: 8px; }
             .input-group input { padding: 6px; }
             button { padding: 12px; }
-            #timer-text { font-size: 1.8rem; }
+            #timer-text { font-size: 2rem; }
+            .status-area { min-height: 38px; }
         }
     </style>
 </head>
@@ -242,6 +254,11 @@
     <div class="container">
         <h1>Пранаяма</h1>
         
+        <div class="status-area">
+            <div id="phase-text">Готовность</div>
+            <div id="cycle-text">Цикл 1</div>
+        </div>
+
         <div class="breathing-area">
             <div class="circle" id="b-circle"></div>
             <div class="bar-container" id="b-bar-container">
@@ -249,8 +266,6 @@
             </div>
 
             <div class="info">
-                <div id="cycle-text">Цикл 1</div>
-                <div id="phase-text">Готовность</div>
                 <div id="timer-text">--</div>
             </div>
         </div>
@@ -282,7 +297,7 @@
             <div class="toggle-row">
                 <span>Задержки дыхания</span>
                 <label class="switch">
-                    <input type="checkbox" id="holds-toggle" checked onchange="toggleHolds()">
+                    <input type="checkbox" id="holds-toggle" checked onchange="toggleHolds(false)">
                     <span class="slider"></span>
                 </label>
             </div>
@@ -291,19 +306,19 @@
         <div class="settings-grid" id="settings-grid">
             <div class="input-group">
                 <label>Вдох (с)</label>
-                <input type="number" id="t-in" value="4" min="1">
+                <input type="number" id="t-in" value="4" min="1" oninput="markCustom()">
             </div>
             <div class="input-group hold-group">
                 <label>Задержка</label>
-                <input type="number" id="t-hold1" value="4" min="0">
+                <input type="number" id="t-hold1" value="4" min="0" oninput="markCustom()">
             </div>
             <div class="input-group">
                 <label>Выдох (с)</label>
-                <input type="number" id="t-out" value="4" min="1">
+                <input type="number" id="t-out" value="4" min="1" oninput="markCustom()">
             </div>
             <div class="input-group hold-group">
                 <label>Задержка</label>
-                <input type="number" id="t-hold2" value="4" min="0">
+                <input type="number" id="t-hold2" value="4" min="0" oninput="markCustom()">
             </div>
             <div class="input-group" style="grid-column: span 2;">
                 <label>Циклы (0 = бесконечно)</label>
@@ -337,6 +352,11 @@
         const holdGroups = document.querySelectorAll('.hold-group');
         const presetSelect = document.getElementById('preset-type');
 
+        // Функция помечает, что юзер вручную поменял цифры
+        function markCustom() {
+            presetSelect.value = 'custom';
+        }
+
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -356,24 +376,17 @@
             
             osc.frequency.setValueAtTime(frequency, now);
 
-            // Решение проблемы щелчков: плавные огибающие (Envelopes)
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(0, now);
-            
-            // Мягкая атака за 0.1 сек (убирает щелчок в начале)
             gainNode.gain.linearRampToValueAtTime(0.2, now + 0.1);
-            
-            // Плавное затухание почти до конца
             gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration - 0.2);
-            
-            // Точный уход в абсолютный ноль (убирает щелчок при остановке)
             gainNode.gain.linearRampToValueAtTime(0, now + duration);
 
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             osc.start(now);
-            osc.stop(now + duration + 0.1); // Останавливаем чуть позже нулевой громкости
+            osc.stop(now + duration + 0.1); 
         }
 
         function applyPreset() {
@@ -387,15 +400,21 @@
             
             const hasHolds = parseInt(opt.dataset.h1) > 0 || parseInt(opt.dataset.h2) > 0;
             holdsToggle.checked = hasHolds;
-            toggleHolds();
+            
+            // Передаем true, чтобы вызов toggleHolds не сбрасывал селект на "custom"
+            toggleHolds(true);
         }
 
-        function toggleHolds() {
+        function toggleHolds(isFromPreset = false) {
             const hasHolds = holdsToggle.checked;
             holdGroups.forEach(group => {
                 group.style.display = hasHolds ? 'flex' : 'none';
             });
-            presetSelect.value = 'custom';
+            
+            // Если переключили тумблер руками (не через пресет) - сбрасываем список на "свои значения"
+            if (!isFromPreset) {
+                presetSelect.value = 'custom';
+            }
         }
 
         function updateVisualizer() {
@@ -528,7 +547,7 @@
             barFill.style.transform = 'scaleY(0)'; 
         }
 
-        toggleHolds();
+        toggleHolds(true); // При инициализации считаем как программное срабатывание
         updateVisualizer();
     </script>
 </body>
