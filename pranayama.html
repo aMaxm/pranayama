@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пранаяма Таймер</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f3;
+            --card-bg: #ffffff;
+            --primary: #639a88;
+            --primary-hover: #4e7d6e;
+            --text-main: #2d4039;
+            --text-muted: #798f86;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Анимация дыхания */
+        .breathing-area {
+            position: relative;
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .circle {
+            width: 120px;
+            height: 120px;
+            background: rgba(99, 154, 136, 0.15);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+            /* Плавное возвращение в исходное состояние при остановке */
+            transition: transform 0.5s ease-out; 
+        }
+
+        .info {
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #phase-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        #timer-text {
+            font-size: 2.5rem;
+            font-weight: 300;
+            line-height: 1;
+        }
+
+        /* Настройки времени */
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1dbd8;
+            border-radius: 10px;
+            background: #fafcfb;
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Кнопка */
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.stop {
+            background: #e07a5f;
+        }
+
+        button.stop:hover {
+            background: #c96d55;
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .circle {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Пранаяма</h1>
+        
+        <div class="breathing-area">
+            <div class="circle" id="b-circle"></div>
+            <div class="info">
+                <div id="phase-text">Готовность</div>
+                <div id="timer-text">--</div>
+            </div>
+        </div>
+
+        <div class="settings">
+            <div class="input-group">
+                <label>Вдох (сек)</label>
+                <input type="number" id="t-in" value="4" min="1">
+            </div>
+            <div class="input-group">
+                <label>Задержка (сек)</label>
+                <input type="number" id="t-hold1" value="4" min="0">
+            </div>
+            <div class="input-group">
+                <label>Выдох (сек)</label>
+                <input type="number" id="t-out" value="4" min="1">
+            </div>
+            <div class="input-group">
+                <label>Задержка (сек)</label>
+                <input type="number" id="t-hold2" value="4" min="0">
+            </div>
+        </div>
+
+        <button id="btn-action" onclick="toggleTimer()">Начать практику</button>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let timerInterval;
+        let phases = [];
+        let currentPhaseIndex = 0;
+        let timeLeft = 0;
+
+        const circle = document.getElementById('b-circle');
+        const phaseText = document.getElementById('phase-text');
+        const timerText = document.getElementById('timer-text');
+        const btnAction = document.getElementById('btn-action');
+
+        function toggleTimer() {
+            if (isRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            // Собираем значения из инпутов
+            const tIn = parseInt(document.getElementById('t-in').value) || 0;
+            const tHold1 = parseInt(document.getElementById('t-hold1').value) || 0;
+            const tOut = parseInt(document.getElementById('t-out').value) || 0;
+            const tHold2 = parseInt(document.getElementById('t-hold2').value) || 0;
+
+            // Формируем циклы дыхания. scale 1.6 - круг увеличен, scale 1 - круг исходного размера
+            phases = [
+                { name: 'Вдох', time: tIn, scale: 1.6 },
+                { name: 'Задержка', time: tHold1, scale: 1.6 },
+                { name: 'Выдох', time: tOut, scale: 1 },
+                { name: 'Задержка', time: tHold2, scale: 1 }
+            ].filter(p => p.time > 0); // Исключаем фазы, где время равно 0 (например, если задержка не нужна)
+
+            if (phases.length === 0) return;
+
+            isRunning = true;
+            btnAction.innerText = 'Остановить';
+            btnAction.classList.add('stop');
+            currentPhaseIndex = 0;
+            
+            runPhase();
+        }
+
+        function runPhase() {
+            let phase = phases[currentPhaseIndex];
+            phaseText.innerText = phase.name;
+            timeLeft = phase.time;
+            timerText.innerText = timeLeft;
+
+            // Настраиваем CSS-анимацию круга под текущую фазу
+            // Если это задержка, размер останется прежним, анимация просто "ждет"
+            circle.style.transition = `transform ${phase.time}s linear`;
+            circle.style.transform = `scale(${phase.scale})`;
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerText.innerText = timeLeft;
+                } else {
+                    clearInterval(timerInterval);
+                    // Переход к следующей фазе
+                    currentPhaseIndex = (currentPhaseIndex + 1) % phases.length;
+                    runPhase();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            btnAction.innerText = 'Начать практику';
+            btnAction.classList.remove('stop');
+            phaseText.innerText = 'Готовность';
+            timerText.innerText = '--';
+            
+            // Возвращаем круг в исходное состояние
+            circle.style.transition = 'transform 0.5s ease-out';
+            circle.style.transform = 'scale(1)';
+        }
+    </script>
+</body>
+</html>
